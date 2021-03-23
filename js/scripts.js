@@ -15,7 +15,7 @@
             event.preventDefault();
 
             var form= $(this);
-            var ajaxurl = "../Add-jobs.php";
+            var ajaxurl = admin_url('Add-Jobs.php');
             var detail_info = {
                 post_name: form.find("#post_name").val(),
                 post_email: form.find("#post_email").val(),
@@ -32,7 +32,7 @@
                 type: 'POST',
                 data: {
                     post_details : detail_info,
-                    action: 'save_enquiry_form_action'
+                    action: 'do_something'
                 },
                 error: function(error) {
                     alert("Insert Failed" + error);

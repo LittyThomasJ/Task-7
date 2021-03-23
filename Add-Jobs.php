@@ -495,4 +495,10 @@
   		}
   	}
   }
+add_action( 'wp_ajax_do_something', 'my_do_something_callback' );
+function my_do_something_callback() {
+    $object = new Addapplication();
+    $object->save_enquiry_form_action();
+    die();
+}
 ?>
