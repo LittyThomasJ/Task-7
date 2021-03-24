@@ -439,8 +439,7 @@
     public function __construct(){
       add_action( 'init', array($this,'create_jobs') );
       add_action( 'admin_init', array($this,'my_admin' ));
-      do_action( 'add_meta_boxes', 'jobs' );
-      do_meta_boxes('jobs','myplugin-view-application-page' , null);
+
       //add_action( 'add_meta_boxes', array($this,'add_metabox_application' ));
 
       // For calling save_custom_meta_box
@@ -517,16 +516,15 @@
 
     //add_submenu_page callback function
 
-    function view_application_page() {
+    function view_application_page($value) {
 
-        echo '<h2> Applications </h2>';
+      echo '<h2> Applications </h2>';
+      global $wpdb;
 
-    }
-    function cd_meta_box_add() {
-    add_meta_box( 'in-progress-metabox', 'In Progress', 'render_task_in_progress_metabox', 'jobs', 'normal', 'high' );
-    }
-    function render_task_in_progress_metabox() {
-        // html
+      $table_name = $wpdb->prefix . "wp_addjob";
+
+      $user = $wpdb->get_results( "SELECT * FROM $table_name" );
+
     }
 
 
