@@ -414,13 +414,15 @@
                     <button class="apply" data-post_id="' . get_the_ID() . '">' .
                         __( 'Apply', 'reportabug' ) .
                     '</button>
-                        <form id="enquiry_email_form" action="#" method="POST" data-url="' . admin_url('admin-ajax.php') . '" enctype="multipart/form-data">
-                  				<input type="text" class="job" name="post_name" id="post_name" placeholder="Name"/><br>
-                          <input type="email" class="job" name="post_email" id="post_email" placeholder="Email"/><br>
-                          <input type="text" class="job" name="post_designation" id="post_designation" placeholder="Designation"/><br>
-                  				<button type="submit" class="job" ><i class="glyphicon glyphicon-pencil"></i> Submit</button>
-                        </form>
-                      <p class="report-a-bug-response"></p>
+                      <form id="enquiry_email_form" action="#" method="POST" data-url="' . admin_url('admin-ajax.php') . '" enctype="multipart/form-data">
+                				<input type="text" class="job" name="post_name" id="post_name" placeholder="Name"/><br>
+                        <input type="email" class="job" name="post_email" id="post_email" placeholder="Email"/><br>
+                        <input type="text" class="job" name="post_designation" id="post_designation" placeholder="Designation"/><br>
+                				<button type="submit" class="job" ><i class="glyphicon glyphicon-pencil"></i> Submit</button>
+                      </form>
+                      <div id="result_msg">
+
+                      </div>
                       </div>' ;
     }
         }
@@ -437,6 +439,10 @@
     public function __construct(){
       add_action( 'init', array($this,'create_jobs') );
       add_action( 'admin_init', array($this,'my_admin' ));
+      do_action( 'add_meta_boxes', 'jobs' );
+      do_meta_boxes('jobs','myplugin-view-application-page' , null);
+      //add_action( 'add_meta_boxes', array($this,'add_metabox_application' ));
+
       // For calling save_custom_meta_box
       add_action("save_post", array($this,"save_custom_meta_box"));
       add_filter('the_content',array($this,'display_front_end'),20,1);
@@ -444,8 +450,16 @@
       add_action('admin_menu', array($this,'add_jobs_submenu_example'));
       add_action( 'admin_init', array($this,'myplugin_settings_init' ));
       add_action( 'wp_enqueue_scripts', array($this,'wpb_adding_styles'));
+      add_action('wp_ajax_nopriv_save_post_details_form',array($this,'save_enquiry_form_action'));
+      add_action('wp_ajax_save_post_details_form',array($this,'save_enquiry_form_action'));
       add_action('wp_ajax_nopriv_save_post_details_form', array($this,'save_enquiry_form_action'));
+      add_filter('the_content',array($this,'display_application'));
+      add_action('admin_menu', array($this,'add_view_application_submenu'));
+      // add_action( 'add_meta_boxes', array($this,'cd_meta_box_add') );
+      // add_action( 'add_meta_boxes', array($this,'cd_meta_box_add' ));
 
+      // add_action('wp_ajax_contact_us',array($this,'ajax_contact_us'));
+//
     }
     function wpb_adding_styles() {
       wp_enqueue_style( 'apply-job', plugin_dir_url( __FILE__ ) . 'css/style.css' );
@@ -454,31 +468,67 @@
 
       // set variables for script
       wp_localize_script( 'apply-job', 'settings', array(
+          'ajaxurl'    => admin_url( 'admin-ajax.php' ),
           'send_label' => __( 'Applying', 'apply' )
       ) );
     }
     function save_enquiry_form_action() {
       global $wpdb;
-      $table = request;
       $post_name = $_POST['post_details']['post_name'];
       $post_email = $_POST['post_details']['post_email'];
       $post_designation = $_POST['post_details']['post_designation'];
-    	$args = [
-    		'post_name'=> $post_name,
-    		'post_email'=>$post_email,
-        'post_designation'=>$post_designation
-    	];
-      $format = array(
-                '%s','%s','%s'
-                );
-    	$is_post_inserted = $wpdb->insert( $table, $data, $format );
+      $args = array(
+    		'name'=> $post_name,
+    		'email'=>$post_email,
+        'designation'=>$post_designation
+    	);
+
+    	$is_post_inserted = $wpdb->insert('wp_addjob',$args);
 
     	if($is_post_inserted) {
-    		return "success";
+        $output = array(
+                    'name' => $post_name,
+                    'email'  => $post_email,
+                    'designation' => $post_designation
+                   );
+
+    		wp_send_json_success($output);
     	} else {
-    		return "failed";
+    		wp_send_json_error("Please try again");
     	}
+
     }
+
+
+    //admin_menu callback function
+
+    function add_view_application_submenu(){
+
+      add_submenu_page(
+                      'edit.php?post_type=jobs', //$parent_slug
+                      'Admin Page',  //$page_title
+                      'View Applications',        //$menu_title
+                      'manage_options',           //$capability
+                      'myplugin-view-application-page',//$menu_slug
+                      array($this,'view_application_page')//$function
+      );
+
+    }
+
+    //add_submenu_page callback function
+
+    function view_application_page() {
+
+        echo '<h2> Applications </h2>';
+
+    }
+    function cd_meta_box_add() {
+    add_meta_box( 'in-progress-metabox', 'In Progress', 'render_task_in_progress_metabox', 'jobs', 'normal', 'high' );
+    }
+    function render_task_in_progress_metabox() {
+        // html
+    }
+
 
 
   }
@@ -495,10 +545,5 @@
   		}
   	}
   }
-add_action( 'wp_ajax_do_something', 'my_do_something_callback' );
-function my_do_something_callback() {
-    $object = new Addapplication();
-    $object->save_enquiry_form_action();
-    die();
-}
+
 ?>
