@@ -414,11 +414,11 @@
                         __( 'Apply', 'reportabug' ) .
                     '</button>
                       <form id="application_form" action="#" method="POST" data-url="' . admin_url('admin-ajax.php') . '" enctype="multipart/form-data">
-                				<input type="text" class="job" name="post_name" id="post_name" placeholder="Name"/><br>
+                				<input type="text" class="job" name="post_name" id="post_name" placeholder="Name" required/><br>
                         <span id="name_error_message" class="job"></span>
-                        <input type="email" class="job" name="post_email" id="post_email" placeholder="Email"/><br>
+                        <input type="email" class="job" name="post_email" id="post_email" placeholder="Email" required/><br>
                         <span id="email_error_message" class="job"></span>
-                        <input type="text" class="job" name="post_designation" id="post_designation" placeholder="Designation"/><br>
+                        <input type="text" class="job" name="post_designation" id="post_designation" placeholder="Designation" required/><br>
                         <span id="designation_error_message" class="job"></span><br>
                 				<button type="submit" class="job" ><i class="glyphicon glyphicon-pencil"></i> Submit</button>
                       </form>

@@ -28,24 +28,47 @@
           // alert();
       		var name = $("#post_name").val();
       		var pattern = /^[a-zA-Z]*$/;
-          var no=name.length;
-      		if(pattern.test(name) && name != '' && no >=3)
+          // var no=name.length;
+      		if(name.length !=0)
       		{
-
       			$("#name_error_message").hide();
-
-      		}
-      		else
-      		{
+      		} else{
       			$("#name_error_message").html("Enter valid name");
       			$("#name_error_message").show();
       			error_name = true;
       			//$( "#FirstName" ).focus();
       		}
         }
+        function check_email() {
+          // alert();
+      		var email = $("#post_email").val();
+          var pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      		if(pattern.test(email))
+      		{
+      			$("#email_error_message").hide();
+      		} else{
+      			$("#email_error_message").html("Enter valid email");
+      			$("#email_error_message").show();
+      			error_email = true;
+      			//$( "#FirstName" ).focus();
+      		}
+        }
+        function check_designation() {
+          // alert();
+      		var designation = $("#post_designation").val();
+      		if(designation.length != 0)
+      		{
+      			$("#designation_error_message").hide();
+      		} else{
+      			$("#designation_error_message").html("Enter valid designation");
+      			$("#designation_error_message").show();
+      			error_designation = true;
+      			//$( "#FirstName" ).focus();
+      		}
+        }
         // Insert data on submit of 'enquiry_email_form'
         $("#application_form").on("submit", function (event) {
-            event.preventDefault();
+            // event.preventDefault();
             var form= $(this);
             var link = form.data("url");
             var post_id = settings.post_id;
@@ -57,16 +80,21 @@
                 post_designation: form.find("#post_designation").val()
             }
 
-            if(detail_info.post_name === "" || detail_info.post_email === "" || detail_info.post_designation === "") {
-                //alert("Fields cannot be blank");
-                $("#name_error_message").html("Enter name");
-					      $("#name_error_message").show();
-                $("#email_error_message").html("Enter email id");
-					      $("#email_error_message").show();
-                $("#designation_error_message").html("Enter Designation to which you applying");
-					      $("#designation_error_message").show();
-                return;
-            }
+            error_email = false;
+        		error_name = false;
+        		error_designation = false;
+        		check_email();
+        		check_name();
+        		check_designation();
+        		// Checking each variable, whether variable is set to false,then it will return false and else returns true
+        		if ( error_name || error_email || error_designation) {
+              alert("Enter valid Details");
+        			event.preventDefault();
+        		} else{
+        			// alert("success");
+              event.preventDefault();
+        		}
+
 
             $.ajax({
                 url: settings.ajaxurl,
