@@ -91,6 +91,7 @@
       // To check the user have the capability to edit
       if(!current_user_can("edit_post", $post_id))
         return $post_id;
+
       // aborting the logic that is to follow beneath the condition, if doing autosave = true
       if(defined("DOING_AUTOSAVE") && DOING_AUTOSAVE)
         return $post_id;
@@ -376,12 +377,9 @@
     // Function for displaying contents in front end
     public function display_front_end($val){
       global $post;
-
       if ( ! is_single() ) {
         return $content;
     }
-
-
       // Initialzing variables with null values
       $test=$title=$email=$date=$myplugin_organization_name_field=$myplugin_description_field=$myplugin_vacancy_field = $myplugin_email_visibilty_field = $myplugin_title_visibility_field =$myplugin_date_field ="";
       $content = "<div>";
@@ -408,23 +406,27 @@
         	if($myplugin_title_visibility_field == 'value1') {
             $content .= "$title";
           }else{
+          // Contents to be displayed
           $content .= "$title $myplugin_organization_name_field  $myplugin_description_field $myplugin_vacancy_field $date $email";
           $content .= '<div class="apply-job">
 
                     <button class="apply" data-post_id="' . get_the_ID() . '">' .
                         __( 'Apply', 'reportabug' ) .
                     '</button>
-                      <form id="enquiry_email_form" action="#" method="POST" data-url="' . admin_url('admin-ajax.php') . '" enctype="multipart/form-data">
+                      <form id="application_form" action="#" method="POST" data-url="' . admin_url('admin-ajax.php') . '" enctype="multipart/form-data">
                 				<input type="text" class="job" name="post_name" id="post_name" placeholder="Name"/><br>
+                        <span id="name_error_message" class="job"></span>
                         <input type="email" class="job" name="post_email" id="post_email" placeholder="Email"/><br>
+                        <span id="email_error_message" class="job"></span>
                         <input type="text" class="job" name="post_designation" id="post_designation" placeholder="Designation"/><br>
+                        <span id="designation_error_message" class="job"></span><br>
                 				<button type="submit" class="job" ><i class="glyphicon glyphicon-pencil"></i> Submit</button>
                       </form>
                       <div id="result_msg">
 
                       </div>
                       </div>' ;
-    }
+          }
         }
       } else{
       	$content .= "<p>Nothing to show</p>";
@@ -437,53 +439,54 @@
   class AddApplication extends JobsSettings{
     // Initialized usng constructor
     public function __construct(){
+      // Hooks
       add_action( 'init', array($this,'create_jobs') );
       add_action( 'admin_init', array($this,'my_admin' ));
-
-      //add_action( 'add_meta_boxes', array($this,'add_metabox_application' ));
-
-      // For calling save_custom_meta_box
+      add_action( 'admin_init', array($this,'create_application_metabox' ));
       add_action("save_post", array($this,"save_custom_meta_box"));
       add_filter('the_content',array($this,'display_front_end'),20,1);
-      // add_action('wp_enqueue_scripts', array($this,'Style_contents'));
       add_action('admin_menu', array($this,'add_jobs_submenu_example'));
       add_action( 'admin_init', array($this,'myplugin_settings_init' ));
       add_action( 'wp_enqueue_scripts', array($this,'wpb_adding_styles'));
       add_action('wp_ajax_nopriv_save_post_details_form',array($this,'save_enquiry_form_action'));
       add_action('wp_ajax_save_post_details_form',array($this,'save_enquiry_form_action'));
       add_action('wp_ajax_nopriv_save_post_details_form', array($this,'save_enquiry_form_action'));
-      add_filter('the_content',array($this,'display_application'));
-      add_action('admin_menu', array($this,'add_view_application_submenu'));
-      // add_action( 'add_meta_boxes', array($this,'cd_meta_box_add') );
-      // add_action( 'add_meta_boxes', array($this,'cd_meta_box_add' ));
+      add_action('admin_head', array($this,'my_action_javascript'));
+      add_action('wp_ajax_your_delete_action', array($this,'delete_row'));
+      add_action( 'wp_ajax_nopriv_your_delete_action', array($this,'delete_row'));
 
-      // add_action('wp_ajax_contact_us',array($this,'ajax_contact_us'));
-//
     }
+    // For including css and javascript
     function wpb_adding_styles() {
       wp_enqueue_style( 'apply-job', plugin_dir_url( __FILE__ ) . 'css/style.css' );
 
-      wp_enqueue_script( 'apply-job', plugin_dir_url( __FILE__ ) . 'js/scripts.js', array( 'jquery' ), null, true );
+      wp_enqueue_script( 'apply-job', plugin_dir_url( __FILE__ ) . 'js/scripts.js?newversion', array( 'jquery' ), null, true );
 
       // set variables for script
       wp_localize_script( 'apply-job', 'settings', array(
           'ajaxurl'    => admin_url( 'admin-ajax.php' ),
-          'send_label' => __( 'Applying', 'apply' )
+          'send_label' => __( 'Applying', 'apply' ),
+          'post_id' => get_the_ID()
       ) );
     }
+    // callback function for inserting the application through front end
     function save_enquiry_form_action() {
       global $wpdb;
+      // The values posted via ajax are stored in variables
       $post_name = $_POST['post_details']['post_name'];
       $post_email = $_POST['post_details']['post_email'];
       $post_designation = $_POST['post_details']['post_designation'];
+      $post_id = $_POST['post_details']['post_id'];
+      // store the contents posted via ajax in an array
       $args = array(
     		'name'=> $post_name,
     		'email'=>$post_email,
-        'designation'=>$post_designation
+        'designation'=>$post_designation,
+        'post_id'=>$post_id
     	);
-
+      // For inserting the data
     	$is_post_inserted = $wpdb->insert('wp_addjob',$args);
-
+      // Check whether the value is inserted or not , then return json encoded the data.
     	if($is_post_inserted) {
         $output = array(
                     'name' => $post_name,
@@ -497,38 +500,91 @@
     	}
 
     }
-
-
-    //admin_menu callback function
-
-    function add_view_application_submenu(){
-
-      add_submenu_page(
-                      'edit.php?post_type=jobs', //$parent_slug
-                      'Admin Page',  //$page_title
-                      'View Applications',        //$menu_title
-                      'manage_options',           //$capability
-                      'myplugin-view-application-page',//$menu_slug
-                      array($this,'view_application_page')//$function
-      );
-
+    // function for creating metabox for viewing applicants
+    public function create_application_metabox() {
+    	// Adding metabox
+    	add_meta_box( 'job_application_meta_box',
+    		'View Job Application',
+    		array($this, 'display_job_application_meta_box'),
+    		'jobs', 'normal', 'high'
+    	);
     }
-
-    //add_submenu_page callback function
-
-    function view_application_page($value) {
-
-      echo '<h2> Applications </h2>';
+    public function display_job_application_meta_box(){
+      ?>
+      <?php
+      // Get the id of post
+      $current_post_id = get_the_ID();
       global $wpdb;
-
-      $table_name = $wpdb->prefix . "wp_addjob";
-
-      $user = $wpdb->get_results( "SELECT * FROM $table_name" );
-
+      // Retieving data from database
+      $result = $wpdb->get_results("SELECT * FROM wp_addjob where post_id=$current_post_id");
+      // echo $current_post_id;
+      if($result){
+        echo "<form id='view_application'><table border='0'>";
+        echo "<tr><th>Name</th><th>Email</th><th>Designation</th><th>Action</th></tr>";
+        foreach ( $result as $print )   {
+          ?>
+          <tr>
+            <td><?php echo $print->name;?></td>
+            <td><?php echo $print->email;?></td>
+            <td><?php echo $print->designation;?></td>
+            <td> <a name="delete" id="delete" class="delete" data-id="<?php echo $print->job_id; ?>" data-url="<?php echo admin_url( 'admin-ajax.php' ) ?>">Delete</a> </td>
+          </tr>
+        <?php
+        }
+            echo "</table></form>";
+      }
+      else {
+        echo "<table border='0'><tr><td> No Records Found </td></tr></table>";
+      }
     }
+    public function my_action_javascript() {
+    ?>
+    <script type="text/javascript" >
+    jQuery(document).ready(function($) {
+      // Delete records on click delete anchor tag
+      $('.delete').click(function(event){
+        event.preventDefault();
+        var tr = $(this).closest('tr');
+        var form= $(this);
+        var id= form.data('id');
+        var link= form.data('url');
+        // ajax
+        jQuery.ajax({
+            type: 'POST',
+            url: link,
+            data: {"action": "your_delete_action", "element_id": id},
+            error: function(error) {
+                alert("Insert Failed" + error);
+            },
+            success: function (data) {
+             alert("Deleted");
+             // Fadeout and remove table row
+             setTimeout(function () {
+                         tr.fadeOut(1000,function(){
+                           tr.remove();
+                         });
+                     }, 300);
+            }
 
+        });
 
-
+      });
+    });
+    </script>
+    <?php
+    }
+    // callback function tho ajax deletion
+    public function delete_row() {
+      global $wpdb;
+      $id = $_POST['element_id'];
+      // delete the record
+      $deleted = $wpdb->delete( 'wp_addjob', array( 'job_id' => $id ) );
+      if($deleted){
+        return "success";
+      }else{
+        return "error";
+      }
+    }
   }
   // Object created
   new AddApplication();
