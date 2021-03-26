@@ -377,7 +377,6 @@
     // Function for displaying contents in front end
     public function display_front_end($val){
       global $post;
-      
       // Initialzing variables with null values
       $test=$title=$email=$date=$myplugin_organization_name_field=$myplugin_description_field=$myplugin_vacancy_field = $myplugin_email_visibilty_field = $myplugin_title_visibility_field =$myplugin_date_field ="";
       $content = "<div>";
@@ -438,6 +437,8 @@
     // Initialized usng constructor
     public function __construct(){
       // Hooks
+      global $jal_db_version;
+      $jal_db_version = '1.0';
       add_action( 'init', array($this,'create_jobs') );
       add_action( 'admin_init', array($this,'my_admin' ));
       add_action( 'admin_init', array($this,'create_application_metabox' ));
@@ -452,8 +453,43 @@
       add_action('admin_head', array($this,'my_action_javascript'));
       add_action('wp_ajax_your_delete_action', array($this,'delete_row'));
       add_action( 'wp_ajax_nopriv_your_delete_action', array($this,'delete_row'));
+      register_activation_hook( __FILE__, array($this,'jal_install'));
+      // register_activation_hook(__FILE__,array($this,'wp_myfirstplugin_install'));
+      // add_action( 'admin_enqueue_scripts', array($this,'wpdocs_selectively_enqueue_admin_script') );
 
     }
+
+
+    public function jal_install() {
+    	global $wpdb;
+    	global $jal_db_version;
+
+    	$table_name = $wpdb->prefix . 'wp_addjob';
+
+    	$charset_collate = $wpdb->get_charset_collate();
+
+    	$sql = "CREATE TABLE " . $table_name . "(job_id int NOT NULL AUTO_INCREMENT,name varchar(50),email varchar(50),designation,PRIMARY KEY (job_id))
+      $charset_collate;";
+
+    	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    	dbDelta( $sql );
+
+    	add_option( 'jal_db_version', $jal_db_version );
+    }
+    // // create table on first install
+    // public function wp_myfirstplugin_install(){
+    //   global $wpdb;
+    //   $table_name = $wpdb->prefix . "wp_addjob";
+    //   // check if table function_exists
+    //   if($wpdb->get_var("show tables like '$table_name'") != $table_name) {
+    //     wpfirstplugin_createTable($table_name);
+    //   }
+    // }
+    // public function wpfirstplugin_createTable($table_name){
+    //   global $wpdb;
+    //   $sql = "CREATE TABLE " . $table_name . "(job_id int NOT NULL AUTO_INCREMENT,name varchar(50),email varchar(50),designation,PRIMARY KEY (job_id))";
+    //   $results = $wpdb->query($sql);
+    // }
     // For including css and javascript
     function wpb_adding_styles() {
       wp_enqueue_style( 'apply-job', plugin_dir_url( __FILE__ ) . 'css/style.css' );
@@ -583,6 +619,17 @@
         return "error";
       }
     }
+    // function wpdocs_selectively_enqueue_admin_script() {
+    //   wp_enqueue_script( 'my_custom_script', plugin_dir_url( __FILE__ ) . 'application.js', array(), '1.0' );
+    //   // set variables for script
+    //   wp_localize_script( 'my_custom_script', 'job', array(
+    //       'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+    //       'send_label' => __( 'Applying', 'apply' ),
+    //       'post_id' => get_the_ID()
+    //   ) );
+    // }
+
+
   }
   // Object created
   new AddApplication();
