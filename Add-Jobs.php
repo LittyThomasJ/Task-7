@@ -464,13 +464,19 @@
     	global $wpdb;
     	global $jal_db_version;
 
-    	$table_name = $wpdb->prefix . 'wp_addjob';
+    	$table_name = $wpdb->prefix . 'addjob';
 
     	$charset_collate = $wpdb->get_charset_collate();
 
-    	$sql = "CREATE TABLE " . $table_name . "(job_id int NOT NULL AUTO_INCREMENT,name varchar(50),email varchar(50),designation,PRIMARY KEY (job_id))
-      $charset_collate;";
-
+    	// $sql = "CREATE TABLE $table_name(job_id int NOT NULL AUTO_INCREMENT,name varchar(50),email varchar(50),designation,PRIMARY KEY (job_id));";
+      $sql = "CREATE TABLE $table_name (
+          		job_id int NOT NULL AUTO_INCREMENT,
+          		name varchar(50) NOT NULL,
+          		email varchar(50) NOT NULL,
+          		designation varchar(50) NOT NULL,
+              post_id int NOT NULL,
+          		PRIMARY KEY  (job_id)
+          	);";
     	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     	dbDelta( $sql );
 
@@ -506,6 +512,7 @@
     // callback function for inserting the application through front end
     function save_enquiry_form_action() {
       global $wpdb;
+      $table_name = $wpdb->prefix . 'addjob';
       // The values posted via ajax are stored in variables
       $post_name = $_POST['post_details']['post_name'];
       $post_email = $_POST['post_details']['post_email'];
@@ -519,7 +526,7 @@
         'post_id'=>$post_id
     	);
       // For inserting the data
-    	$is_post_inserted = $wpdb->insert('wp_addjob',$args);
+    	$is_post_inserted = $wpdb->insert($table_name,$args);
       // Check whether the value is inserted or not , then return json encoded the data.
     	if($is_post_inserted) {
         $output = array(
@@ -549,8 +556,9 @@
       // Get the id of post
       $current_post_id = get_the_ID();
       global $wpdb;
+      $table_name = $wpdb->prefix . 'addjob';
       // Retieving data from database
-      $result = $wpdb->get_results("SELECT * FROM wp_addjob where post_id=$current_post_id");
+      $result = $wpdb->get_results("SELECT * FROM $table_name where post_id=$current_post_id");
       // echo $current_post_id;
       if($result){
         echo "<form id='view_application'><table border='0'>";
