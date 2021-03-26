@@ -377,9 +377,7 @@
     // Function for displaying contents in front end
     public function display_front_end($val){
       global $post;
-      if ( ! is_single() ) {
-        return $content;
-    }
+      
       // Initialzing variables with null values
       $test=$title=$email=$date=$myplugin_organization_name_field=$myplugin_description_field=$myplugin_vacancy_field = $myplugin_email_visibilty_field = $myplugin_title_visibility_field =$myplugin_date_field ="";
       $content = "<div>";
