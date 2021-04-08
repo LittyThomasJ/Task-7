@@ -454,21 +454,15 @@
       add_action('wp_ajax_your_delete_action', array($this,'delete_row'));
       add_action( 'wp_ajax_nopriv_your_delete_action', array($this,'delete_row'));
       register_activation_hook( __FILE__, array($this,'jal_install'));
-      // register_activation_hook(__FILE__,array($this,'wp_myfirstplugin_install'));
       // add_action( 'admin_enqueue_scripts', array($this,'wpdocs_selectively_enqueue_admin_script') );
-
     }
 
-
+    // Create table on installation
     public function jal_install() {
     	global $wpdb;
-    	global $jal_db_version;
-
+    	// global $jal_db_version;
     	$table_name = $wpdb->prefix . 'addjob';
-
-    	$charset_collate = $wpdb->get_charset_collate();
-
-    	// $sql = "CREATE TABLE $table_name(job_id int NOT NULL AUTO_INCREMENT,name varchar(50),email varchar(50),designation,PRIMARY KEY (job_id));";
+    	// $charset_collate = $wpdb->get_charset_collate();
       $sql = "CREATE TABLE $table_name (
           		job_id int NOT NULL AUTO_INCREMENT,
           		name varchar(50) NOT NULL,
@@ -479,23 +473,8 @@
           	);";
     	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     	dbDelta( $sql );
-
-    	add_option( 'jal_db_version', $jal_db_version );
+    	// add_option( 'jal_db_version', $jal_db_version );
     }
-    // // create table on first install
-    // public function wp_myfirstplugin_install(){
-    //   global $wpdb;
-    //   $table_name = $wpdb->prefix . "wp_addjob";
-    //   // check if table function_exists
-    //   if($wpdb->get_var("show tables like '$table_name'") != $table_name) {
-    //     wpfirstplugin_createTable($table_name);
-    //   }
-    // }
-    // public function wpfirstplugin_createTable($table_name){
-    //   global $wpdb;
-    //   $sql = "CREATE TABLE " . $table_name . "(job_id int NOT NULL AUTO_INCREMENT,name varchar(50),email varchar(50),designation,PRIMARY KEY (job_id))";
-    //   $results = $wpdb->query($sql);
-    // }
     // For including css and javascript
     function wpb_adding_styles() {
       wp_enqueue_style( 'apply-job', plugin_dir_url( __FILE__ ) . 'css/style.css' );
@@ -514,9 +493,9 @@
       global $wpdb;
       $table_name = $wpdb->prefix . 'addjob';
       // The values posted via ajax are stored in variables
-      $post_name = $_POST['post_details']['post_name'];
-      $post_email = $_POST['post_details']['post_email'];
-      $post_designation = $_POST['post_details']['post_designation'];
+      $post_name = sanitize_text_field($_POST['post_details']['post_name']);
+      $post_email = sanitize_email($_POST['post_details']['post_email']);
+      $post_designation = sanitize_text_field($_POST['post_details']['post_designation']);
       $post_id = $_POST['post_details']['post_id'];
       // store the contents posted via ajax in an array
       $args = array(
@@ -526,20 +505,21 @@
         'post_id'=>$post_id
     	);
       // For inserting the data
-    	$is_post_inserted = $wpdb->insert($table_name,$args);
-      // Check whether the value is inserted or not , then return json encoded the data.
-    	if($is_post_inserted) {
-        $output = array(
-                    'name' => $post_name,
-                    'email'  => $post_email,
-                    'designation' => $post_designation
-                   );
+      if(is_email($post_email)){
+    	  $is_post_inserted = $wpdb->insert($table_name,$args);
+        // Check whether the value is inserted or not , then return json encoded the data.
+      	if($is_post_inserted) {
+          $output = array(
+                      'name' => $post_name,
+                      'email'  => $post_email,
+                      'designation' => $post_designation
+                     );
 
-    		wp_send_json_success($output);
-    	} else {
-    		wp_send_json_error("Please try again");
-    	}
-
+      		wp_send_json_success($output);
+      	} else {
+      		wp_send_json_error("Please try again");
+      	}
+      }
     }
     // function for creating metabox for viewing applicants
     public function create_application_metabox() {
@@ -566,9 +546,9 @@
         foreach ( $result as $print )   {
           ?>
           <tr>
-            <td><?php echo $print->name;?></td>
-            <td><?php echo $print->email;?></td>
-            <td><?php echo $print->designation;?></td>
+            <td><?php esc_attr_e($print->name);?></td>
+            <td><?php esc_attr_e($print->email);?></td>
+            <td><?php esc_attr_e($print->designation);?></td>
             <td> <a name="delete" id="delete" class="delete" data-id="<?php echo $print->job_id; ?>" data-url="<?php echo admin_url( 'admin-ajax.php' ) ?>">Delete</a> </td>
           </tr>
         <?php
