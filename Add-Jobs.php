@@ -484,7 +484,6 @@
       // set variables for script
       wp_localize_script( 'apply-job', 'settings', array(
           'ajaxurl'    => admin_url( 'admin-ajax.php' ),
-          'send_label' => __( 'Applying', 'apply' ),
           'post_id' => get_the_ID()
       ) );
     }
