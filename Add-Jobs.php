@@ -13,8 +13,8 @@
   /**
    * Define plugin constants
    */
-  define( 'MYPLUGIN_PATH', trailingslashit( plugin_dir_path(__FILE__) ) );
-  define( 'MYPLUGIN_URL', trailingslashit( plugins_url('/', __FILE__) ) );
+  // define( 'MYPLUGIN_PATH', trailingslashit( plugin_dir_path(__FILE__) ) );
+  // define( 'MYPLUGIN_URL', trailingslashit( plugins_url('/', __FILE__) ) );
   //require_once MYPLUGIN_PATH . 'Settings/settings.php';
   // class for creating cutsom post type
   class JobsCustomType{
